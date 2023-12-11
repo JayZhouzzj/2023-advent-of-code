@@ -176,9 +176,10 @@ L7JLJL-JLJLJL--JLJ.L
 In this last example, 10 tiles are enclosed by the loop.
 
 Figure out whether you have time to search for the nest by calculating the area within the loop. How many tiles are enclosed by the loop?
+part 2 credit: https://www.reddit.com/r/adventofcode/comments/18evyu9/comment/kcqtow6/
 """
 import sys
-import math
+from collections import deque
 
 
 def solve_line(line):
@@ -204,6 +205,7 @@ def solve():
     matrix = []
     for line in input:
         matrix.append(list(line.strip()))
+    matrix_copy = [x[:] for x in matrix]
     m = len(matrix)
     n = len(matrix[0])
 
@@ -216,12 +218,19 @@ def solve():
     start_i, start_j = find_start()
 
     max_dist = float("-inf")
+    chosen = None
+    chosen_dir = None
 
-    def dfs(i, j, dist):
+    def dfs(i, j, dist, mark=False):
         curr = (i, j)
         nonlocal dir
         nonlocal max_dist
+        nonlocal chosen
+        nonlocal chosen_dir
+        init_dir = dir
+        init_i, init_j = i, j
         while curr != (start_i, start_j):
+            # print(curr, dir, dist, mark)
             i, j = curr
             dist += 1
             if (
@@ -278,7 +287,12 @@ def solve():
                     curr = (i - 1, j)
                 else:
                     return
-        max_dist = max(max_dist, dist)
+            if mark:
+                matrix[i][j] = "X"
+        if dist > max_dist:
+            max_dist = dist
+            chosen = (init_i, init_j)
+            chosen_dir = init_dir
 
     dir = "up"
     visited = set()
@@ -292,7 +306,78 @@ def solve():
     dir = "right"
     visited = set()
     dfs(start_i, start_j + 1, 1)
-    print(max_dist // 2)
+    chosen_i, chosen_j = chosen
+    dir = chosen_dir
+    visited = set()
+    # print(chosen_i, chosen_j, chosen_dir)
+    dfs(chosen_i, chosen_j, 1, True)
+    # for line in matrix:
+    #     print("".join(line))
+
+    # count = 0
+
+    # def dfs(i, j):
+    #     stack = deque()
+    #     stack.append((i, j))
+    #     nonlocal count
+    #     while stack:
+    #         i, j = stack.pop()
+    #         if (
+    #             i < 0
+    #             or i >= m
+    #             or j < 0
+    #             or j >= n
+    #             or matrix[i][j] == "X"
+    #             or matrix[i][j] == "S"
+    #             or matrix[i][j] == "O"
+    #         ):
+    #             continue
+    #         count += 1
+    #         matrix[i][j] = "O"
+    #         stack.append((i + 1, j))
+    #         stack.append((i - 1, j))
+    #         stack.append((i, j + 1))
+    #         stack.append((i, j - 1))
+
+    # for i in range(m):
+    #     for j in range(n):
+    #         if (
+    #             (i == 0 or j == 0 or i == m - 1 or j == n - 1)
+    #             and matrix[i][j] != "X"
+    #             and matrix[i][j] != "S"
+    #             and matrix[i][j] != "O"
+    #         ):
+    #             dfs(i, j)
+    for i in range(m):
+        for j in range(n):
+            if matrix[i][j] == "S" or matrix[i][j] == "X":
+                matrix[i][j] = "█"
+            else:
+                matrix[i][j] = "░"
+
+    inside_count = 0
+    for i in range(m):
+        for j in range(n):
+            meet = 0
+            if matrix[i][j] == "░":
+                next_i, next_j = i, j
+                while next_i in range(m) and next_j in range(n):
+                    if (
+                        matrix[next_i][next_j] == "█"
+                        and matrix_copy[next_i][next_j] != "7"
+                        and matrix_copy[next_i][next_j] != "L"
+                    ):
+                        meet += 1
+                    next_i += 1
+                    next_j += 1
+                if meet % 2 == 1:
+                    matrix[i][j] = "O"
+                    inside_count += 1
+    for line in matrix:
+        print("".join(line))
+    for line in matrix_copy:
+        print("".join(line))
+    print(inside_count)
 
 
 if __name__ == "__main__":
