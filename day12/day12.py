@@ -76,53 +76,59 @@ After unfolding, adding all of the possible arrangement counts together produces
 Unfold your condition records; what is the new sum of possible arrangement counts?
 """
 import sys
-from collections import deque, defaultdict
-import heapq
+from functools import cache
 
 
 def solve_line(line):
     have, blocks = line.split(" ")
     have = [have]
-    # have *= 5
+    have *= 5
     have = list("?".join(have))
     blocks = [int(x) for x in blocks.split(",")]
-    # blocks = blocks * 5
+    blocks = blocks * 5
     print("".join(have), blocks)
     res = 0
 
-    def check_have():
-        # split have into blocks of #
-        have_blocks = []
-        curr_block = 0
-        for c in have:
-            if c == "#":
-                curr_block += 1
+    @cache
+    def dp(i, j):
+        if i >= len(have):
+            if j >= len(blocks):
+                return 1
             else:
-                if curr_block > 0:
-                    have_blocks.append(curr_block)
-                    curr_block = 0
-        if curr_block > 0:
-            have_blocks.append(curr_block)
-        # print(have, have_blocks)
-        return have_blocks == blocks
+                return 0
+        if j >= len(blocks):
+            if have[i] == "#":
+                return 0
+            return dp(i + 1, j)
 
-    def dfs(i):
-        nonlocal res
-        if i == len(have):
-            if check_have():
-                res += 1
-            return
+        if have[i] == ".":
+            return dp(i + 1, j)
+        res = 0
+        if have[i] == "?" or have[i] == "#":
+            next_i = i
+            while (
+                next_i < len(have)
+                and (have[next_i] == "?" or have[next_i] == "#")
+                and next_i - i + 1 < blocks[j]
+            ):
+                next_i += 1
+            if (
+                next_i < len(have)
+                and (have[next_i] == "?" or have[next_i] == "#")
+                and next_i - i + 1 == blocks[j]
+                and (
+                    next_i + 1 >= len(have)
+                    or have[next_i + 1] == "?"
+                    or have[next_i + 1] == "."
+                )
+            ):
+                res += dp(next_i + 2, j + 1)
         if have[i] == "?":
-            have[i] = "#"
-            dfs(i + 1)
-            have[i] = "."
-            dfs(i + 1)
-            have[i] = "?"
-        else:
-            dfs(i + 1)
+            res += dp(i + 1, j)
+        print(f"{i, j, res = }")
+        return res
 
-    dfs(0)
-    return res
+    return dp(0, 0)
 
 
 def solve():
