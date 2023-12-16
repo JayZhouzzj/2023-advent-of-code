@@ -90,15 +90,47 @@ def solve():
     matrix = [list(line.strip()) for line in input]
     m = len(matrix)
     n = len(matrix[0])
+
+    def append_next(next, curr_dir):
+        next_i, next_j = next
+        if matrix[next_i][next_j] == ".":
+            q.append((next, curr_dir))
+        elif matrix[next_i][next_j] == "/":
+            if curr_dir == "right":
+                q.append((next, "up"))
+            elif curr_dir == "left":
+                q.append((next, "down"))
+            elif curr_dir == "up":
+                q.append((next, "right"))
+            elif curr_dir == "down":
+                q.append((next, "left"))
+        elif matrix[next_i][next_j] == "\\":
+            if curr_dir == "right":
+                q.append((next, "down"))
+            elif curr_dir == "left":
+                q.append((next, "up"))
+            elif curr_dir == "up":
+                q.append((next, "left"))
+            elif curr_dir == "down":
+                q.append((next, "right"))
+        elif matrix[next_i][next_j] == "|":
+            if curr_dir == "right" or curr_dir == "left":
+                q.append((next, "up"))
+                q.append((next, "down"))
+            else:
+                q.append((next, curr_dir))
+        elif matrix[next_i][next_j] == "-":
+            if curr_dir == "up" or curr_dir == "down":
+                q.append((next, "left"))
+                q.append((next, "right"))
+            else:
+                q.append((next, curr_dir))
+
     start = (0, 0)
     visited = set()
     # visited.add((start, "right"))
     q = deque()
-    # only cover the given input
-    if matrix[0][0] == "\\":
-        q.append((start, "down"))
-    else:
-        q.append((start, "right"))
+    append_next(start, "right")
     while q:
         curr = q.popleft()
         if curr in visited:
@@ -115,38 +147,7 @@ def solve():
         next_i, next_j = next
         if next_i < 0 or next_i >= m or next_j < 0 or next_j >= n:
             continue
-        if matrix[next_i][next_j] == ".":
-            q.append((next, curr[1]))
-        elif matrix[next_i][next_j] == "/":
-            if curr[1] == "right":
-                q.append((next, "up"))
-            elif curr[1] == "left":
-                q.append((next, "down"))
-            elif curr[1] == "up":
-                q.append((next, "right"))
-            elif curr[1] == "down":
-                q.append((next, "left"))
-        elif matrix[next_i][next_j] == "\\":
-            if curr[1] == "right":
-                q.append((next, "down"))
-            elif curr[1] == "left":
-                q.append((next, "up"))
-            elif curr[1] == "up":
-                q.append((next, "left"))
-            elif curr[1] == "down":
-                q.append((next, "right"))
-        elif matrix[next_i][next_j] == "|":
-            if curr[1] == "right" or curr[1] == "left":
-                q.append((next, "up"))
-                q.append((next, "down"))
-            else:
-                q.append((next, curr[1]))
-        elif matrix[next_i][next_j] == "-":
-            if curr[1] == "up" or curr[1] == "down":
-                q.append((next, "left"))
-                q.append((next, "right"))
-            else:
-                q.append((next, curr[1]))
+        append_next(next, curr[1])
     visited_cells = set([(x, y) for (x, y), _ in visited])
     # print(visited_cells)
     for i in range(m):
