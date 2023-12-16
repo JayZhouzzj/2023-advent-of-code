@@ -91,74 +91,75 @@ def solve():
     m = len(matrix)
     n = len(matrix[0])
 
-    def append_next(next, curr_dir):
-        next_i, next_j = next
-        if matrix[next_i][next_j] == ".":
-            q.append((next, curr_dir))
-        elif matrix[next_i][next_j] == "/":
-            if curr_dir == "right":
-                q.append((next, "up"))
-            elif curr_dir == "left":
-                q.append((next, "down"))
-            elif curr_dir == "up":
-                q.append((next, "right"))
-            elif curr_dir == "down":
-                q.append((next, "left"))
-        elif matrix[next_i][next_j] == "\\":
-            if curr_dir == "right":
-                q.append((next, "down"))
-            elif curr_dir == "left":
-                q.append((next, "up"))
-            elif curr_dir == "up":
-                q.append((next, "left"))
-            elif curr_dir == "down":
-                q.append((next, "right"))
-        elif matrix[next_i][next_j] == "|":
-            if curr_dir == "right" or curr_dir == "left":
-                q.append((next, "up"))
-                q.append((next, "down"))
-            else:
+    def shoot_from(start, init_dir):
+        def append_next(next, curr_dir):
+            next_i, next_j = next
+            if matrix[next_i][next_j] == ".":
                 q.append((next, curr_dir))
-        elif matrix[next_i][next_j] == "-":
-            if curr_dir == "up" or curr_dir == "down":
-                q.append((next, "left"))
-                q.append((next, "right"))
-            else:
-                q.append((next, curr_dir))
+            elif matrix[next_i][next_j] == "/":
+                if curr_dir == "right":
+                    q.append((next, "up"))
+                elif curr_dir == "left":
+                    q.append((next, "down"))
+                elif curr_dir == "up":
+                    q.append((next, "right"))
+                elif curr_dir == "down":
+                    q.append((next, "left"))
+            elif matrix[next_i][next_j] == "\\":
+                if curr_dir == "right":
+                    q.append((next, "down"))
+                elif curr_dir == "left":
+                    q.append((next, "up"))
+                elif curr_dir == "up":
+                    q.append((next, "left"))
+                elif curr_dir == "down":
+                    q.append((next, "right"))
+            elif matrix[next_i][next_j] == "|":
+                if curr_dir == "right" or curr_dir == "left":
+                    q.append((next, "up"))
+                    q.append((next, "down"))
+                else:
+                    q.append((next, curr_dir))
+            elif matrix[next_i][next_j] == "-":
+                if curr_dir == "up" or curr_dir == "down":
+                    q.append((next, "left"))
+                    q.append((next, "right"))
+                else:
+                    q.append((next, curr_dir))
 
-    start = (0, 0)
-    visited = set()
-    # visited.add((start, "right"))
-    q = deque()
-    append_next(start, "right")
-    while q:
-        curr = q.popleft()
-        if curr in visited:
-            continue
-        visited.add(curr)
-        if curr[1] == "right":
-            next = (curr[0][0], curr[0][1] + 1)
-        elif curr[1] == "left":
-            next = (curr[0][0], curr[0][1] - 1)
-        elif curr[1] == "up":
-            next = (curr[0][0] - 1, curr[0][1])
-        elif curr[1] == "down":
-            next = (curr[0][0] + 1, curr[0][1])
-        next_i, next_j = next
-        if next_i < 0 or next_i >= m or next_j < 0 or next_j >= n:
-            continue
-        append_next(next, curr[1])
-    visited_cells = set([(x, y) for (x, y), _ in visited])
-    # print(visited_cells)
+        visited = set()
+        q = deque()
+        append_next(start, init_dir)
+        while q:
+            curr = q.popleft()
+            if curr in visited:
+                continue
+            visited.add(curr)
+            if curr[1] == "right":
+                next = (curr[0][0], curr[0][1] + 1)
+            elif curr[1] == "left":
+                next = (curr[0][0], curr[0][1] - 1)
+            elif curr[1] == "up":
+                next = (curr[0][0] - 1, curr[0][1])
+            elif curr[1] == "down":
+                next = (curr[0][0] + 1, curr[0][1])
+            next_i, next_j = next
+            if next_i < 0 or next_i >= m or next_j < 0 or next_j >= n:
+                continue
+            append_next(next, curr[1])
+        visited_cells = set([(x, y) for (x, y), _ in visited])
+        # print(visited_cells)
+        print(len(visited_cells))
+        return len(visited_cells)
+
+    res = float("-inf")
+    for j in range(n):
+        res = max(res, shoot_from((0, j), "down"))
+        res = max(res, shoot_from((m - 1, j), "up"))
     for i in range(m):
-        for j in range(n):
-            if (i, j) in visited_cells:
-                matrix[i][j] = "#"
-            else:
-                matrix[i][j] = "."
-    for line in matrix:
-        print("".join(line))
-    print(len(visited_cells))
+        res = max(res, shoot_from((i, 0), "right"))
+        res = max(res, shoot_from((i, n - 1), "left"))
+    print(f"{res = }")
 
 
 if __name__ == "__main__":
