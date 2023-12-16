@@ -1,6 +1,6 @@
 # 2023-advent-of-code
 
-Come join advent of code! https://adventofcode.com/  
+Come join advent of code! https://adventofcode.com/2023/  
 Starting from Dec 1, one puzzle each day until Christmas
 
 ## Join my private leaderboard
