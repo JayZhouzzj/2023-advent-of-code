@@ -142,7 +142,7 @@ def solve():
     values = input[0].strip().split(",")
     res = 0
 
-    def solve_value(value):
+    def hash(value):
         init = 0
         for char in value:
             init += ord(char)
@@ -151,8 +151,28 @@ def solve():
         print(value, init)
         return init
 
+    boxes = [[] for _ in range(256)]
     for value in values:
-        res += solve_value(value)
+        if value[-1] == "-":
+            label = value[:-1]
+            box = hash(label)
+            match = list(filter(lambda x: x[0] == label, boxes[box]))
+            if match:
+                boxes[box].remove(match[0])
+        else:
+            split_idx = value.index("=")
+            label = value[:split_idx]
+            box = hash(label)
+            value = int(value[split_idx + 1 :])
+            match = list(filter(lambda x: x[0] == label, boxes[box]))
+            if match:
+                match[0][1] = value
+            else:
+                boxes[box].append([label, value])
+    print(boxes)
+    for box_idx, box in enumerate(boxes):
+        for slot_idx, slot in enumerate(box):
+            res += (box_idx + 1) * (slot_idx + 1) * slot[1]
     print(res)
 
 
