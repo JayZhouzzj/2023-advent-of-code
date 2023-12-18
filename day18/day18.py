@@ -44,58 +44,68 @@ At this point, the trench could contain 38 cubic meters of lava. However, this i
 Now, the lagoon can contain a much more respectable 62 cubic meters of lava. While the interior is dug out, the edges are also painted according to the color codes in the dig plan.
 
 The Elves are concerned the lagoon won't be large enough; if they follow their dig plan, how many cubic meters of lava could it hold?
+--- Part Two ---
+The Elves were right to be concerned; the planned lagoon would be much too small.
+
+After a few minutes, someone realizes what happened; someone swapped the color and instruction parameters when producing the dig plan. They don't have time to fix the bug; one of them asks if you can extract the correct instructions from the hexadecimal codes.
+
+Each hexadecimal code is six hexadecimal digits long. The first five hexadecimal digits encode the distance in meters as a five-digit hexadecimal number. The last hexadecimal digit encodes the direction to dig: 0 means R, 1 means D, 2 means L, and 3 means U.
+
+So, in the above example, the hexadecimal codes can be converted into the true instructions:
+
+#70c710 = R 461937
+#0dc571 = D 56407
+#5713f0 = R 356671
+#d2c081 = D 863240
+#59c680 = R 367720
+#411b91 = D 266681
+#8ceee2 = L 577262
+#caa173 = U 829975
+#1b58a2 = L 112010
+#caa171 = D 829975
+#7807d2 = L 491645
+#a77fa3 = U 686074
+#015232 = L 5411
+#7a21e3 = U 500254
+Digging out this loop and its interior produces a lagoon that can hold an impressive 952408144115 cubic meters of lava.
+
+Convert the hexadecimal color codes into the correct instructions; if the Elves follow this new dig plan, how many cubic meters of lava could the lagoon hold?
 """
 import sys
-from collections import defaultdict
-import heapq
+import numpy as np
 
 
+# https://stackoverflow.com/a/30408825
+def PolyArea(x, y):
+    return 0.5 * np.abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
+
+
+# x is i, y is j
 def solve():
     curr = [0, 0]
-    border = set()
-    border.add(tuple(curr))
-    dir_to_offset = {"U": (-1, 0), "D": (1, 0), "L": (0, -1), "R": (0, 1)}
-    min_x, min_y, max_x, max_y = 0, 0, 0, 0
-    for line in input:
-        line = line.strip().split()
-        direction = line[0]
-        distance = int(line[1])
-        for _ in range(distance):
-            curr[0] += dir_to_offset[direction][0]
-            curr[1] += dir_to_offset[direction][1]
-            min_x = min(min_x, curr[0])
-            min_y = min(min_y, curr[1])
-            max_x = max(max_x, curr[0])
-            max_y = max(max_y, curr[1])
-            border.add(tuple(curr))
-    inside_count = 0
-    for i in range(min_x, max_x + 1):
-        for j in range(min_y, max_y + 1):
-            meet = 0
-            if (i, j) not in border:
-                next_i, next_j = i, j
-                while next_i <= max_x and next_j <= max_y:
-                    if (
-                        (next_i, next_j) in border
-                        and (
-                            not (
-                                (next_i, next_j - 1) in border
-                                and (next_i + 1, next_j) in border
-                            )
-                        )
-                        and (
-                            not (
-                                (next_i, next_j + 1) in border
-                                and (next_i - 1, next_j) in border
-                            )
-                        )
-                    ):
-                        meet += 1
-                    next_i += 1
-                    next_j += 1
-                if meet % 2 == 1:
-                    inside_count += 1
-    print(len(border), inside_count, len(border) + inside_count)
+    dirs = [[0, 1], [1, 0], [0, -1], [-1, 0]]
+    actions = [
+        [dirs[int(hex[-1])], int(hex[:-1], 16)]
+        for hex in [line[2][2:-1] for line in [line.strip().split() for line in input]]
+    ]
+    xlist, ylist = [0], [0]
+    b = 0
+    for direction, distance in actions:
+        # print(direction, distance)
+        curr[0] += direction[0] * distance
+        curr[1] += direction[1] * distance
+        xlist.append(curr[0])
+        ylist.append(curr[1])
+        b += distance
+    """
+    https://en.wikipedia.org/wiki/Pick%27s_theorem 
+    Let 
+    i be the number of integer points interior to the polygon, and let 
+    b be the number of integer points on its boundary (including both vertices and points along the sides). 
+    Then the area A of this polygon is:
+    """
+    A = PolyArea(xlist, ylist)
+    print((A + 1 - b / 2) + b)
 
 
 if __name__ == "__main__":
