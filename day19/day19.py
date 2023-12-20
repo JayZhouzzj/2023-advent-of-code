@@ -46,8 +46,20 @@ The workflows are listed first, followed by a blank line, then the ratings of th
 Ultimately, three parts are accepted. Adding up the x, m, a, and s rating for each of the accepted parts gives 7540 for the part with x=787, 4623 for the part with x=2036, and 6951 for the part with x=2127. Adding all of the ratings for all of the accepted parts gives the sum total of 19114.
 
 Sort through all of the parts you've been given; what do you get if you add together all of the rating numbers for all of the parts that ultimately get accepted?
+--- Part Two ---
+Even with your help, the sorting process still isn't fast enough.
+
+One of the Elves comes up with a new plan: rather than sort parts individually through all of these workflows, maybe you can figure out in advance which combinations of ratings will be accepted or rejected.
+
+Each of the four ratings (x, m, a, s) can have an integer value ranging from a minimum of 1 to a maximum of 4000. Of all possible distinct combinations of ratings, your job is to figure out which ones will be accepted.
+
+In the above example, there are 167409079868000 distinct combinations of ratings that will be accepted.
+
+Consider only your list of workflows; the list of part ratings that the Elves wanted you to sort is no longer relevant. How many distinct combinations of ratings will be accepted by the Elves' workflows?
 """
 import sys
+from functools import reduce
+from operator import mul
 
 
 # Idea: https://www.reddit.com/r/adventofcode/comments/18ltr8m/comment/ke010be/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
@@ -61,30 +73,113 @@ def solve():
         flows[name] = rules[:-1]
 
     # print(flows)
-    def go_with(flow):
-        if flow == "A":
-            return True
-        elif flow == "R":
-            return False
-        flow = flows[flow]
-        x, m, a, s = parts["x"], parts["m"], parts["a"], parts["s"]
-        for rule in flow.split(","):
-            if ":" not in rule:
-                return go_with(rule)
-            condition, dest = rule.split(":")
-            if eval(condition):
-                return go_with(dest)
+    def go_with(rule):
+        # print(rule, ranges)
+        if rule == "A":
+            return reduce(mul, map(lambda x: x[1] - x[0] + 1, ranges.values()))
+        elif rule == "R" or rule == "":
+            return 0
+        if rule in flows:
+            rule = flows[rule]
 
-    total = 0
-    for line in input[start + 1 :]:
-        parts = {}
-        for part in line.strip()[1:-1].split(","):
-            key, value = part.split("=")
-            parts[key] = int(value)
-        line_res = go_with("in")
-        if line_res:
-            total += sum(parts.values())
-    print(total)
+        first = rule.split(",")[0]
+        rest = rule[rule.find(",") + 1 :]
+        alt_cond_range = None
+        if ":" not in first:
+            return go_with(first)
+        cond, next = first.split(":")
+        key = cond[0]
+        old_range = ranges[key]
+        x = int(cond[2:])
+        if cond[1] == ">":
+            cond_range = (x + 1, 4000)
+            alt_cond_range = (1, x)
+        else:
+            cond_range = (1, x - 1)
+            alt_cond_range = (x, 4000)
+        new_range = intersect(old_range, cond_range)
+        if new_range == (0, 0):
+            return 0
+        ranges[key] = new_range
+        res = go_with(next)
+        ranges[key] = old_range
+        if alt_cond_range is not None:
+            new_range = intersect(old_range, alt_cond_range)
+            if new_range == (0, 0):
+                return res
+            ranges[key] = new_range
+            res += go_with(rest)
+            ranges[key] = old_range
+        # print(rule, res)
+        return res
+
+    ranges = {
+        "x": (1, 4000),
+        "m": (1, 4000),
+        "a": (1, 4000),
+        "s": (1, 4000),
+    }
+    res = go_with(flows["in"])
+    print(res)
+
+
+def intersect(a, b):
+    x1, y1 = a
+    x2, y2 = b
+    return (
+        (max(x1, x2), min(y1, y2))
+        if (max(x1, x2) <= min(y1, y2) and max(x1, x2) > 0)
+        else (0, 0)
+    )
+
+
+# def intersect(a, b):
+#     intersection = []
+#     for range1 in a:
+#         for range2 in b:
+#             start = max(range1[0], range2[0])
+#             end = min(range1[1], range2[1])
+
+#             if start <= end:
+#                 intersection.append((start, end))
+#     return intersection
+
+
+# def union(a, b):
+#     combined = sorted(a + b)
+#     if not combined:
+#         return []
+#     # Initialize the result list with the first range
+#     union = [combined[0]]
+
+#     for current in combined[1:]:
+#         last = union[-1]
+
+#         if current[0] <= last[1] + 1:
+#             new_range = (last[0], max(last[1], current[1]))
+#             union[-1] = new_range
+#         else:
+#             union.append(current)
+#     return union
+
+
+# def invert(a):
+#     sorted_ranges = sorted(a)
+
+#     inverted = []
+#     start = 0
+
+#     for range in sorted_ranges:
+#         # Add range from the end of the last range to the start of the current range
+#         if start < range[0]:
+#             inverted.append((start, range[0] - 1))
+#         start = range[1] + 1
+
+#     # Handle the end of the last range
+#     if start <= 4000:
+#         inverted.append((start, 4000))
+
+#     return inverted
 
 
 if __name__ == "__main__":
