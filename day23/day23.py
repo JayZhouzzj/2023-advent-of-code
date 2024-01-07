@@ -91,16 +91,43 @@ Find the longest hike you can take through the surprisingly dry hiking trails li
 import sys
 from collections import defaultdict, deque
 import copy
+
+
 def solve():
     matrix = [list(line.strip()) for line in input]
     # replace all <, >, ^, v with .
-    # for i in range(len(matrix)):
-    #     for j in range(len(matrix[0])):
-    #         if matrix[i][j] in "<>^v":
-    #             matrix[i][j] = "."
+    for i in range(len(matrix)):
+        for j in range(len(matrix[0])):
+            if matrix[i][j] in "<>^v":
+                matrix[i][j] = "."
+
+    adj = defaultdict(set)  # i, j -> r, c, dist
+    for i in range(len(matrix)):
+        for j in range(len(matrix[0])):
+            if matrix[i][j] == ".":
+                for x, y in [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]:
+                    if 0 <= x < len(matrix) and 0 <= y < len(matrix[0]):
+                        if matrix[x][y] == ".":
+                            adj[(i, j)].add((x, y, 1))
+    # Condense graph https://www.reddit.com/r/adventofcode/comments/18oy4pc/comment/kekhj7f/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+    to_delete = set()
+    for v in adj:
+        if len(adj[v]) == 2:
+            a, b = list(adj[v])
+            ai, aj, ad, bi, bj, bd = a + b
+            a = (ai, aj)
+            b = (bi, bj)
+            adj[a].remove(v + (ad,))
+            adj[b].remove(v + (bd,))
+            adj[a].add(b + (ad + bd,))
+            adj[b].add(a + (ad + bd,))
+            to_delete.add(v)
+    for v in to_delete:
+        del adj[v]
+    # print(adj)
     res = -1
     endi, endj = len(matrix) - 1, len(matrix[0]) - 2
-    stack = [(0, 1, 0)] # i, j, dist
+    stack = [(0, 1, 0)]  # i, j, dist
     visited = set()
 
     # Iterative dfs with backtracking https://www.reddit.com/r/adventofcode/comments/18oy4pc/comment/kekhj7f/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
@@ -117,17 +144,23 @@ def solve():
         visited.add((i, j))
         stack.append((i, j, -1))
 
-        for x, y in [(i+1, j), (i-1, j), (i, j+1), (i, j-1)]:
-            if 0 <= x < len(matrix) and 0 <= y < len(matrix[0]) and (x, y) not in visited:
-                if matrix[x][y] == ".":
-                    stack.append((x, y, dist + 1))
-                elif (matrix[x][y] == "v" and x - i == 1) or \
-                     (matrix[x][y] == "^" and x - i == -1) or \
-                     (matrix[x][y] == ">" and y - j == 1) or \
-                     (matrix[x][y] == "<" and y - j == -1):
-                    stack.append((x, y, dist + 1))
+        for x, y, next_dist in adj[(i, j)]:
+            if (
+                0 <= x < len(matrix)
+                and 0 <= y < len(matrix[0])
+                and (x, y) not in visited
+            ):
+                if (
+                    matrix[x][y] == "."
+                    or (matrix[x][y] == "v" and x - i == 1)
+                    or (matrix[x][y] == "^" and x - i == -1)
+                    or (matrix[x][y] == ">" and y - j == 1)
+                    or (matrix[x][y] == "<" and y - j == -1)
+                ):
+                    stack.append((x, y, dist + next_dist))
 
     print(res)
+
 
 if __name__ == "__main__":
     # take input file name from cmd, default to input.txt
