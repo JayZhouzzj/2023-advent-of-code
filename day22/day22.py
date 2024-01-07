@@ -102,9 +102,22 @@ Brick G can be disintegrated; it does not support any other bricks.
 So, in this example, 5 bricks can be safely disintegrated.
 
 Figure how the blocks will settle based on the snapshot. Once they've settled, consider disintegrating a single brick; how many bricks could be safely chosen as the one to get disintegrated?
+--- Part Two ---
+Disintegrating bricks one at a time isn't going to be fast enough. While it might sound dangerous, what you really need is a chain reaction.
+
+You'll need to figure out the best brick to disintegrate. For each brick, determine how many other bricks would fall if that brick were disintegrated.
+
+Using the same example as above:
+
+Disintegrating brick A would cause all 6 other bricks to fall.
+Disintegrating brick F would cause only 1 other brick, G, to fall.
+Disintegrating any other brick would cause no other bricks to fall. So, in this example, the sum of the number of other bricks that would fall as a result of disintegrating each brick is 7.
+
+For each brick, determine how many other bricks would fall if that brick were disintegrated. What is the sum of the number of other bricks that would fall?
 """
 import sys
-from collections import defaultdict
+from collections import defaultdict, deque
+import copy
 def solve():
     blocks = []
     for line in input:
@@ -115,7 +128,8 @@ def solve():
         block.sort(key=lambda x: x[2])
         blocks.append(block)
     blocks.sort(key=lambda x: x[0][2])
-    notsafe = set()
+    supports = defaultdict(set)
+    supporting = defaultdict(set)
     # (x, y) -> z, idx
     pos = defaultdict(lambda: (0, -1))
     for i, block in enumerate(blocks):
@@ -123,24 +137,43 @@ def solve():
         support = set()
         for x in range(block[0][0], block[1][0] + 1):
             for y in range(block[0][1], block[1][1] + 1):
-                if pos[(x, y)][1] != -1:
-                    if max_z == pos[(x, y)][0]:
-                        support.add(pos[(x, y)][1])
-                    elif max_z < pos[(x, y)][0]:
-                        support = {pos[(x, y)][1]}
+                if max_z == pos[(x, y)][0]:
+                    support.add(pos[(x, y)][1])
+                elif max_z < pos[(x, y)][0]:
+                    support = {pos[(x, y)][1]}
                 max_z = max(max_z, pos[(x, y)][0])
-        if len(support) == 1:
-            notsafe.add(support.pop())
         z_diff = max_z - block[0][2] + 1
         for x in range(block[0][0], block[1][0] + 1):
             for y in range(block[0][1], block[1][1] + 1):
                 for z in range(block[0][2], block[1][2] + 1):
                     pos[(x, y)] = (z + z_diff, i)
-    # print(blocks)
-    # print(pos)
-    # print(notsafe)
-    print(len(blocks), len(notsafe))
-    print(len(blocks) - len(notsafe))
+        supports[i] = support
+        for s in support:
+            supporting[s].add(i)
+    res = 0
+    # deep copy
+    supports_copy = copy.deepcopy(supports)
+    supporting_copy = copy.deepcopy(supporting)
+    res = 0
+    for i in range(len(blocks)):
+        supports = copy.deepcopy(supports_copy)
+        supporting = copy.deepcopy(supporting_copy)
+        remove = deque()
+        remove.append(i)
+        visited = set()
+        visited.add(i)
+        while remove:
+            r = remove.popleft()
+            for candidate in supporting[r]:
+                if r in supports[candidate]:
+                    supports[candidate].remove(r)
+                if not supports[candidate] and candidate not in visited:
+                    remove.append(candidate)
+                    visited.add(candidate)
+        res += len(visited) - 1
+        print(i)
+    print(res)
+
 if __name__ == "__main__":
     # take input file name from cmd, default to input.txt
     if len(sys.argv) > 1:
