@@ -60,7 +60,43 @@ So, in this example, 2 hailstones' future paths cross inside the boundaries of t
 However, you'll need to search a much larger test area if you want to see if any hailstones might collide. Look for intersections that happen with an X and Y position each at least 200000000000000 and at most 400000000000000. Disregard the Z axis entirely.
 
 Considering only the X and Y axes, check all pairs of hailstones' future paths for intersections. How many of these intersections occur within the test area?
+--- Part Two ---
+Upon further analysis, it doesn't seem like any hailstones will naturally collide. It's up to you to fix that!
+
+You find a rock on the ground nearby. While it seems extremely unlikely, if you throw it just right, you should be able to hit every hailstone in a single throw!
+
+You can use the probably-magical winds to reach any integer position you like and to propel the rock at any integer velocity. Now including the Z axis in your calculations, if you throw the rock at time 0, where do you need to be so that the rock perfectly collides with every hailstone? Due to probably-magical inertia, the rock won't slow down or change direction when it collides with a hailstone.
+
+In the example above, you can achieve this by moving to position 24, 13, 10 and throwing the rock at velocity -3, 1, 2. If you do this, you will hit every hailstone as follows:
+
+Hailstone: 19, 13, 30 @ -2, 1, -2
+Collision time: 5
+Collision position: 9, 18, 20
+
+Hailstone: 18, 19, 22 @ -1, -1, -2
+Collision time: 3
+Collision position: 15, 16, 16
+
+Hailstone: 20, 25, 34 @ -2, -2, -4
+Collision time: 4
+Collision position: 12, 17, 18
+
+Hailstone: 12, 31, 28 @ -1, -2, -1
+Collision time: 6
+Collision position: 6, 19, 22
+
+Hailstone: 20, 19, 15 @ 1, -5, -3
+Collision time: 1
+Collision position: 21, 14, 12
+Above, each hailstone is identified by its initial position and its velocity. Then, the time and position of that hailstone's collision with your rock are given.
+
+After 1 nanosecond, the rock has exactly the same position as one of the hailstones, obliterating it into ice dust! Another hailstone is smashed to bits two nanoseconds after that. After a total of 6 nanoseconds, all of the hailstones have been destroyed.
+
+So, at time 0, the rock needs to be at X position 24, Y position 13, and Z position 10. Adding these three coordinates together produces 47. (Don't add any coordinates from the rock's velocity.)
+
+Determine the exact position and velocity the rock needs to have at time 0 so that it perfectly collides with every hailstone. What do you get if you add up the X, Y, and Z coordinates of that initial position?
 """
+from sympy import symbols, Eq, solve
 import sys
 
 
@@ -70,7 +106,7 @@ def parse_input(input_data):
         parts = line.split(" @ ")
         position = tuple(map(int, parts[0].split(", ")))
         velocity = tuple(map(int, parts[1].split(", ")))
-        hailstones.append((position, velocity))
+        hailstones.append(position + velocity)
     return hailstones
 
 
@@ -88,35 +124,29 @@ def compute_intersection(px_a, py_a, vx_a, vy_a, px_b, py_b, vx_b, vy_b):
     return x, y
 
 
-def find_intersection(h1, h2, test_area):
-    (px_a, py_a, _), (vx_a, vy_a, _) = h1
-    (px_b, py_b, _), (vx_b, vy_b, _) = h2
-
-    intersection = compute_intersection(px_a, py_a, vx_a, vy_a, px_b, py_b, vx_b, vy_b)
-    if intersection is None:
-        return False
-    return (
-        test_area[0] <= intersection[0] <= test_area[1]
-        and test_area[0] <= intersection[1] <= test_area[1]
-        and ((intersection[0] - px_a) * vx_a) >= 0
-        and ((intersection[0] - px_b) * vx_b) >= 0
-    )
-
-
-def count_intersections(hailstones, test_area):
-    count = 0
-    n = len(hailstones)
-    for i in range(n):
-        for j in range(i + 1, n):
-            if find_intersection(hailstones[i], hailstones[j], test_area):
-                count += 1
-    return count
-
-
-def solve():
+# Reframe system: https://www.reddit.com/r/adventofcode/comments/18pnycy/comment/keq7g67/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+def solve_question():
     hailstones = parse_input(input)
-    test_area = (200000000000000, 400000000000000)
-    print(count_intersections(hailstones, test_area))
+    lines = hailstones
+    cx, cy, cz, X, Y, Z = symbols("cx cy cz X Y Z")
+
+    # Create a list to hold all the equations
+    equations = []
+
+    # For each line, create equations representing that the line passes through the common point
+    for i, line in enumerate(lines):
+        px, py, pz, vx, vy, vz = line
+        t = symbols(f"t{i}")  # Unique symbol for each line
+        equations.append(Eq(X, px + t * (vx + cx)))
+        equations.append(Eq(Y, py + t * (vy + cy)))
+        equations.append(Eq(Z, pz + t * (vz + cz)))
+
+    # Attempt to solve the system of equations
+    solution = solve(
+        equations, (X, Y, Z, cx, cy, cz) + tuple(f"t{i}" for i in range(len(lines)))
+    )
+    print(solution)
+    print(solution[0][0] + solution[0][1] + solution[0][2])
 
 
 if __name__ == "__main__":
@@ -125,4 +155,4 @@ if __name__ == "__main__":
         input = open(sys.argv[1], "r").readlines()
     else:
         input = open("input.txt", "r").readlines()
-    solve()
+    solve_question()
