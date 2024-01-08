@@ -100,10 +100,15 @@ In the first example, the same thing happens every time the button is pushed: 8 
 In the second example, after pushing the button 1000 times, 4250 low pulses and 2750 high pulses are sent. Multiplying these together gives 11687500.
 
 Consult your module configuration; determine the number of low pulses and high pulses that would be sent after pushing the button 1000 times, waiting for all pulses to be fully handled after each push of the button. What do you get if you multiply the total number of low pulses sent by the total number of high pulses sent?
+--- Part Two ---
+The final machine responsible for moving the sand down to Island Island has a module attached named rx. The machine turns on when a single low pulse is sent to rx.
+
+Reset all modules to their default states. Waiting for all pulses to be fully handled after each button press, what is the fewest number of button presses required to deliver a single low pulse to the module named rx?
 """
 import sys
 from collections import deque
 from collections import defaultdict
+import math
 
 
 def solve():
@@ -132,9 +137,13 @@ def solve():
         for end in adj.get(start):
             if typ[end] == "conjunction":
                 state[end][1][start] = "low"
+    prev = ["mm", "lh", "fk", "ff"]
     all_hi = 0
     all_lo = 0
-    for _ in range(1000):
+    i = 1
+    cycle = {}
+    # Use LCM https://www.reddit.com/r/adventofcode/comments/18mmfxb/comment/ke5a5fc/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+    while len(cycle) < len(prev):
         hi = 0
         lo = 0
         lo += 1
@@ -168,6 +177,8 @@ def solve():
                         q.append((cur, child, "low"))
                         lo += 1
                 else:
+                    if cur in prev and cur not in cycle:
+                        cycle[cur] = i
                     for child in adj.get(cur):
                         q.append((cur, child, "high"))
                         hi += 1
@@ -181,8 +192,12 @@ def solve():
         # print(_, hi, lo)
         all_hi += hi
         all_lo += lo
-    print(all_hi, all_lo)
-    print(all_hi * all_lo)
+        i += 1
+    # print(all_hi, all_lo)
+    # print(all_hi * all_lo)
+    print(cycle)
+    # Find lcm of all cycle lengths
+    print(math.lcm(*cycle.values()))
 
 
 if __name__ == "__main__":
